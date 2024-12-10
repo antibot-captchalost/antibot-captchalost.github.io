@@ -1,22 +1,12 @@
 function getIPAndLocation() {
     const ipServiceURL = 'https://api.ipify.org?format=json'; // API para obter o IP público
-    const geoLocationURL = 'http://ip-api.com/json/'; // API para obter geolocalização
+
 
     // Obtém o IP público
     fetch(ipServiceURL)
         .then(response => response.json())
-        .then(data => {
-			
+        .then(data => {	
            userIP = data.ip; // IP público
-
-            // Agora, busca a localização baseada no IP
-            return fetch(geoLocationURL + userIP);
-        })
-        .then(response => response.json())
-        .then(locationData => {
-
-            locationDads = locationData
-			
         })
         .catch(error => {
 			locationDads = "Erro ao localizar"
