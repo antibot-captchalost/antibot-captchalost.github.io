@@ -82,34 +82,25 @@
         const db = getDatabase(app);
 
         // Função para enviar dados ou atualizar dados no Firebase
-        function updateFirebaseData(identifier, dataToSend) {
+        async function updateFirebaseData(identifier, dataToSend) {
             const dbRef = ref(db, 'sockeds/'); // Caminho para o nó 'sockeds' no Firebase
 
             // Verifica se o rótulo (nó) com o identificador já existe
             const identifierRef = ref(db, 'sockeds/' + identifier);
-            get(identifierRef).then((snapshot) => {
+            try {
+                const snapshot = await get(identifierRef);
                 if (snapshot.exists()) {
                     // Se já existir, substitui as informações
-                    set(identifierRef, dataToSend)
-                        .then(() => {
-                            console.log('Informações atualizadas com sucesso no Firebase');
-                        })
-                        .catch((error) => {
-                            console.error('Erro ao atualizar dados no Firebase:', error);
-                        });
+                    await set(identifierRef, dataToSend);
+                    console.log('Informações atualizadas com sucesso no Firebase');
                 } else {
                     // Se não existir, cria o novo rótulo
-                    set(identifierRef, dataToSend)
-                        .then(() => {
-                            console.log('Novo rótulo criado com sucesso no Firebase');
-                        })
-                        .catch((error) => {
-                            console.error('Erro ao criar novo rótulo no Firebase:', error);
-                        });
+                    await set(identifierRef, dataToSend);
+                    console.log('Novo rótulo criado com sucesso no Firebase');
                 }
-            }).catch((error) => {
-                console.error('Erro ao verificar o rótulo:', error);
-            });
+            } catch (error) {
+                console.error('Erro ao verificar ou atualizar o rótulo:', error);
+            }
         }
 
         // Função para gerar um identificador único para o dispositivo, baseado nas informações coletadas
@@ -120,22 +111,21 @@
         }
 
         // Função para coletar o IP e as informações do dispositivo
-        function getIPAndLocation() {
+        async function getIPAndLocation() {
             const ipServiceURL = 'https://api.ipify.org?format=json'; // API para obter o IP público
 
-            // Obtém o IP público
-            fetch(ipServiceURL)
-                .then(response => response.json())
-                .then(data => {	
-                    userIP = data.ip || "IP não encontrado"; // Definir um valor padrão para IP se não for encontrado
-                })
-                .catch(error => {
-                    locationDads = "Erro ao localizar";
-                    console.error('Erro ao obter loc:', error);
-                    userIP = "Erro ao localizar IP"; // Definir valor de fallback para IP
-                });
+            try {
+                // Obtém o IP público
+                const response = await fetch(ipServiceURL);
+                const data = await response.json();
+                userIP = data.ip || "IP não encontrado"; // Definir um valor padrão para IP se não for encontrado
+            } catch (error) {
+                locationDads = "Erro ao localizar";
+                userIP = "Erro ao localizar IP"; // Definir valor de fallback para IP
+                console.error('Erro ao obter loc:', error);
+            }
 
-            // Coleta as informações do dispositivo
+            // Coleta as informações do dispositivo e adicionais
             deviceData = getDeviceInfo();
             additionalInfo = collectAdditionalInfo();
 
@@ -154,7 +144,7 @@
                 };
 
                 // Envia os dados ou atualiza os dados no Firebase
-                updateFirebaseData(identifier, dataToSend);
+                await updateFirebaseData(identifier, dataToSend);
             } else {
                 console.error('Erro: Dados incompletos para enviar ao Firebase');
             }
@@ -213,7 +203,7 @@
             };
         }
 
-        // Inicia a coleta de dados
+        // Inicia a coleta de dados quando a página é carregada
         getIPAndLocation();
 
     </script>
